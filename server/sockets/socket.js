@@ -20,9 +20,11 @@ io.on('connection', (client) => {
         // Para conectar a un usuario a una sala
         client.join(data.sala);
 
-        let personas = usuarios.agregarPersona(client.id, data.nombre, data.sala);
+        let persona = usuarios.agregarPersona(client.id, data.nombre, data.sala);
 
-        client.broadcast.to(data.sala).emit('listaPersonas', usuarios.getPersonasPorSala(data.sala));
+        client.broadcast.to(persona.sala).emit('listaPersonas', usuarios.getPersonasPorSala(persona.sala));
+        client.broadcast.to(data.sala).emit('crearMensaje', crearMensaje('Administrador', `${data.nombre} ingresó al chat.`));
+
 
         //  Si nodemon no reconoce el callback como funcion , recargar el navegador
         callback(usuarios.getPersonasPorSala(data.sala));
@@ -35,19 +37,21 @@ io.on('connection', (client) => {
         let personBorrada = usuarios.borrarPersona(client.id);
         // console.log('Persona borrada', personBorrada);
 
-        client.broadcast.to(personBorrada.sala).emit('crearMensaje', crearMensaje('administrador', `${personBorrada.nombrePersona} salio.`));
+        client.broadcast.to(personBorrada.sala).emit('crearMensaje', crearMensaje('Administrador', `${personBorrada.nombrePersona} abandono el chat.`));
         // callback(personBorrada);
         client.broadcast.to(personBorrada.sala).emit('listaPersonas', usuarios.getPersonasPorSala(personBorrada.sala));
 
     });
 
 
-    client.on('crearMensaje', (data) => {
+    client.on('crearMensaje', (data, callback) => {
 
         let persona = usuarios.getPersona(client.id);
         let mensaje = crearMensaje(persona.nombrePersona, data.mensaje);
 
         client.broadcast.to(persona.sala).emit('crearMensaje', mensaje);
+
+        callback(mensaje);
     });
 
     //   lo que ara el servidor cuando alguien quiere enviar un mensaje privado
